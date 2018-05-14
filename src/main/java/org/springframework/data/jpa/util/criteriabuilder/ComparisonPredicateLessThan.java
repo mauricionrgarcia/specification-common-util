@@ -1,9 +1,9 @@
 package org.springframework.data.jpa.util.criteriabuilder;
 
 import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.From;
 import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
 
 /**
  * Create a comparison predicate with condition less than
@@ -15,12 +15,13 @@ import javax.persistence.criteria.Root;
 public class ComparisonPredicateLessThan implements ComparisonPredicate {
 
 	@Override
-	public Predicate getPredicate(Root<?> root, CriteriaBuilder criteriaBuilder, String fieldName, Object fieldValue) {
+	public Predicate getPredicate(From<?, ?> root, CriteriaBuilder criteriaBuilder, String fieldName,
+			Object fieldValue) {
 		return lessThan(root, criteriaBuilder, fieldName, fieldValue);
 	}
 
 	@SuppressWarnings("unchecked")
-	private <T extends Comparable<T>> Predicate lessThan(Root<?> root, CriteriaBuilder criteriaBuilder,
+	private <T extends Comparable<T>> Predicate lessThan(From<?, ?> root, CriteriaBuilder criteriaBuilder,
 			String fieldName, Object fieldValue) {
 		Path<T> path = root.get(fieldName);
 		return criteriaBuilder.lessThan(path, (T) fieldValue);

@@ -1,8 +1,8 @@
 package org.springframework.data.jpa.util.criteriabuilder;
 
 import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.From;
 import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
 
 /**
  * Create predicate with a comparison predicate
@@ -22,6 +22,6 @@ public interface ComparisonPredicate {
 	 * @param fieldValue value of field
 	 * @return simple predicate
 	 */
-	public Predicate getPredicate(Root<?> root, CriteriaBuilder criteriaBuilder, String fieldName, Object fieldValue);
+	public Predicate getPredicate(From<?, ?> root, CriteriaBuilder criteriaBuilder, String fieldName, Object fieldValue);
 
 }

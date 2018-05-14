@@ -1,8 +1,8 @@
 package org.springframework.data.jpa.util.criteriabuilder;
 
 import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.From;
 import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
 
 /**
  * Create a comparison predicate equals
@@ -14,7 +14,7 @@ import javax.persistence.criteria.Root;
 public class ComparisonPredicateEqual implements ComparisonPredicate {
 
 	@Override
-	public Predicate getPredicate(Root<?> root, CriteriaBuilder criteriaBuilder, String fieldName, Object fieldValue) {
+	public Predicate getPredicate(From<?,?> root, CriteriaBuilder criteriaBuilder, String fieldName, Object fieldValue) {
 		return criteriaBuilder.equal(root.get(fieldName), fieldValue);
 	}
 

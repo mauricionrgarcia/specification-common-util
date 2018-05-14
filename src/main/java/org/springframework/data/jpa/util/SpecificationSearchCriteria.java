@@ -8,6 +8,7 @@ import java.util.List;
 
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.From;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
@@ -18,6 +19,7 @@ import org.springframework.data.jpa.exception.ReadFilterFieldException;
 import org.springframework.data.jpa.exception.ValidationFilterFiledException;
 import org.springframework.data.jpa.util.criteriabuilder.ComparisonPredicate;
 import org.springframework.data.jpa.util.criteriabuilder.ComparisonPredicateEqual;
+import org.springframework.data.jpa.util.criteriabuilder.Predicates;
 import org.springframework.data.jpa.util.validate.NotBlankFilterField;
 import org.springframework.data.jpa.util.validate.ValidateFilterField;
 import org.springframework.util.Assert;
@@ -66,12 +68,26 @@ public class SpecificationSearchCriteria<F, E> implements Specification<E> {
 
 	@Override
 	public Predicate toPredicate(Root<E> root, CriteriaQuery<?> criteriaQuery, CriteriaBuilder criteriaBuilder) {
+		return this.buildPredicate(root, criteriaQuery, criteriaBuilder);
+	}
+
+	/**
+	 * Build a predicate from criteria
+	 * 
+	 * @param root A root type in the from clause
+	 * @param criteriaBuilder constructor criteria queries
+	 * @param criteriaQuery query
+	 * @return all predicate from the filter.
+	 */
+	public Predicate buildPredicate(From<?, ?> root, CriteriaQuery<?> criteriaQuery, CriteriaBuilder criteriaBuilder) {
 		List<Predicate> predicates = this.buildPredicateCondition(root, criteriaQuery, criteriaBuilder);
 
 		if (CollectionUtils.isNotEmpty(predicates)) {
 			return criteriaBuilder.and(predicates.toArray(new Predicate[predicates.size()]));
 		}
-		return null;
+
+		return Predicates.noneFilter(criteriaBuilder);
+
 	}
 
 	/**
@@ -82,7 +98,7 @@ public class SpecificationSearchCriteria<F, E> implements Specification<E> {
 	 * @param criteriaBuilder {@link CriteriaBuilder}
 	 * @return Predicates from the filter.
 	 */
-	private List<Predicate> buildPredicateCondition(final Root<E> root, final CriteriaQuery<?> criteriaQuery,
+	private List<Predicate> buildPredicateCondition(final From<?, ?> root, final CriteriaQuery<?> criteriaQuery,
 			final CriteriaBuilder criteriaBuilder) {
 
 		List<Predicate> predicates = new ArrayList<>();
@@ -95,8 +111,17 @@ public class SpecificationSearchCriteria<F, E> implements Specification<E> {
 				Object fieldValue = fieldValue(field);
 
 				if (isValidFilterField(specificationField, fieldValue)) {
-					Predicate predicate = makePredicate(specificationField, criteriaBuilder, fieldValue, root,
-							field.getName());
+
+					Predicate predicate = null;
+
+					SpecificationJoinField join = field.getAnnotation(SpecificationJoinField.class);
+					if (join != null) {
+						predicate = makeJoinPredicate(specificationField, criteriaBuilder, fieldValue, root,
+								field.getName(), join, criteriaQuery);
+					} else {
+						predicate = makePredicate(specificationField, criteriaBuilder, fieldValue, root,
+								field.getName());
+					}
 					predicates.add(predicate);
 				}
 			}
@@ -104,8 +129,17 @@ public class SpecificationSearchCriteria<F, E> implements Specification<E> {
 		return predicates;
 	}
 
+	private Predicate makeJoinPredicate(SpecificationField specificationField, CriteriaBuilder criteriaBuilder,
+			Object fieldValue, From<?, ?> root, String name, SpecificationJoinField join,
+			CriteriaQuery<?> criteriaQuery) {
+		Assert.notNull(join.joinType(),
+				"Null join type is not valid, the field " + name + "don't have a validpredicate");
+		return join.joinType().predicateJoin().getPredicate(root, criteriaBuilder, criteriaQuery, name,
+				join.targetField(), fieldValue);
+	}
+
 	private Predicate makePredicate(SpecificationField specificationField, final CriteriaBuilder criteriaBuilder,
-			Object fieldValue, Root<E> root, String fieldName) {
+			Object fieldValue, From<?, ?> root, String fieldName) {
 
 		if (specificationField != null) {
 			ComparisonPredicate comparisonPredicate = specificationField.comparison().comparisonPredicate();
